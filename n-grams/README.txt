@@ -1,0 +1,1 @@
+Data use policy: Note that the ETS data set is proprietary and licensed to Columbia University for research and educational use only (as part of the Linguistic Data Consortium. This data set is extracted from https://catalog.ldc.upenn.edu/LDC2014T06. You may not use or share this data set for any other purpose than for this class.
