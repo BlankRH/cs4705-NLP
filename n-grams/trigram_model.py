@@ -37,7 +37,7 @@ def get_ngrams(sequence, n):
     """
 
     l = []
-    s = sequence
+    s = sequence.copy()
 
     s.insert(0, 'START')
     for i in range(1, n-1):
@@ -65,10 +65,11 @@ class TrigramModel(object):
     
         # Now iterate through the corpus again and count ngrams
         generator = corpus_reader(corpusfile, self.lexicon)
-
-        self.wordcnt = 0
         self.count_ngrams(generator)
-        
+        self.wordcnt = 0
+        for ngram in self.unigramcounts:
+            if ngram != ('START', ):
+                self.wordcnt += self.unigramcounts[ngram]
 
 
     def count_ngrams(self, corpus):
@@ -83,8 +84,6 @@ class TrigramModel(object):
         self.trigramcounts = {} 
 
         for sentence in corpus:
-            for word in sentence:
-                self.wordcnt += 1
 
             l = get_ngrams(sentence, 1)
             for ngram in l:
@@ -99,6 +98,7 @@ class TrigramModel(object):
                     self.bigramcounts[ngram] = 1
                 else:
                     self.bigramcounts[ngram] += 1
+            
 
             l = get_ngrams(sentence, 3)
             for ngram in l:
@@ -106,6 +106,8 @@ class TrigramModel(object):
                     self.trigramcounts[ngram] = 1
                 else:
                     self.trigramcounts[ngram] += 1
+
+            self.bigramcounts[('START', 'START')] = self.unigramcounts[('START',)]
 
         return
 
@@ -116,7 +118,7 @@ class TrigramModel(object):
         """
 
         if trigram not in self.trigramcounts:
-            return 0
+            return 0.0
 
         return self.trigramcounts[trigram]/self.bigramcounts[(trigram[0], trigram[1])]
 
@@ -127,7 +129,7 @@ class TrigramModel(object):
         """
 
         if bigram not in self.bigramcounts:
-            return 0
+            return 0.0
 
         return self.bigramcounts[bigram]/self.unigramcounts[(bigram[0],)]
     
@@ -142,7 +144,7 @@ class TrigramModel(object):
         # store in the TrigramModel instance, and then re-use it.  
 
         if unigram not in self.unigramcounts:
-            return 0
+            return 0.0
 
         return self.unigramcounts[unigram]/self.wordcnt
 
@@ -176,11 +178,8 @@ class TrigramModel(object):
         l = get_ngrams(sentence, 3)
         res = 0
 
-        try: 
-            for trigram in l:
-                res += math.log2(self.smoothed_trigram_probability(trigram))
-        except:
-            print(trigram)           
+        for trigram in l:
+            res += math.log2(self.smoothed_trigram_probability(trigram))         
 
         return res
 
@@ -190,13 +189,14 @@ class TrigramModel(object):
         Returns the log probability of an entire sequence.
         """
 
-        prob_sum = 0
+        prob_sum = 0.0
         word_cnt = 0
 
         for sentence in corpus:
+            prob_sum += self.sentence_logprob(sentence)
             for word in sentence: 
                 word_cnt += 1
-            prob_sum += self.sentence_logprob(sentence)
+            word_cnt += 1 #count stop here
 
         l = prob_sum / word_cnt
 
@@ -231,7 +231,7 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
 
 if __name__ == "__main__":
     
-    #model = TrigramModel(sys.argv[1]) 
+    model = TrigramModel(sys.argv[1]) 
 
     # put test code here...
     # or run the script from the command line with 
@@ -243,12 +243,12 @@ if __name__ == "__main__":
 
     
     # Testing perplexity: 
-    # dev_corpus = corpus_reader(sys.argv[2], model.lexicon)
-    # pp = model.perplexity(dev_corpus)
-    # print(pp)
+    dev_corpus = corpus_reader(sys.argv[2], model.lexicon)
+    pp = model.perplexity(dev_corpus)
+    print(pp)
 
 
     # Essay scoring experiment: 
-    acc = essay_scoring_experiment("ets_toefl_data/train_high.txt", "ets_toefl_data/train_low.txt", "ets_toefl_data/test_high", "ets_toefl_data/test_low")
-    print(acc)
+    #acc = essay_scoring_experiment("ets_toefl_data/train_high.txt", "ets_toefl_data/train_low.txt", "ets_toefl_data/test_high", "ets_toefl_data/test_low")
+    #print(acc)
 

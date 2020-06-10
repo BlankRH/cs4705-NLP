@@ -97,15 +97,61 @@ class CkyParser(object):
         return False
         """
         # TODO, part 2
-        return False 
+        pi = {}
+        n = len(tokens)
+
+        #init
+        for i in range(0, n):
+            for j in range(i+1, n+1):
+                pi[(i,j)] = []
+            for rule in self.grammar.rhs_to_rules[(tokens[i],)]:
+                pi[(i, i+1)].append(rule[0])
+
+        for l in range(2, n+1):
+            for i in range(0, n-l+1):
+                j = i + l
+                for k in range(i+1, j):
+                    for B in pi[(i, k)]:
+                        for C in pi[(k, j)]:
+                            for rule in self.grammar.rhs_to_rules[(B, C)]:
+                                if rule[0] not in pi[(i, j)]:
+                                    pi[(i, j)].append(rule[0])
+
+        return 'S' in pi[(0, n)] or self.grammar.startsymbol in pi[(0, n)]
+
        
     def parse_with_backpointers(self, tokens):
         """
         Parse the input tokens and return a parse table and a probability table.
         """
         # TODO, part 3
-        table= None
-        probs = None
+        table= {}
+        probs = {}
+        n = len(tokens)
+
+        #init
+        for i in range(0, n):
+            for j in range(i+1, n+1):
+                table[(i,j)] = {}
+                probs[(i,j)] = {}
+            for rule in self.grammar.rhs_to_rules[(tokens[i],)]:
+                table[(i, i+1)][rule[0]] = tokens[i]
+                probs[(i, i+1)][rule[0]] = math.log(rule[2])
+
+        for l in range(2, n+1):
+            for i in range(0, n-l+1):
+                j = i + l
+                for k in range(i+1, j):
+                    for B in table[(i, k)]:
+                        for C in table[(k, j)]:
+                            for rule in self.grammar.rhs_to_rules[(B, C)]:
+                                if rule[0] not in table[(i, j)]:
+                                    table[(i, j)][rule[0]] = ((B, i, k), (C, k, j))
+                                    probs[(i, j)][rule[0]] = math.log(rule[2])
+                                elif 2 ** probs[(i, j)][rule[0]] < rule[2]:
+                                    table[(i, j)][rule[0]] = ((B, i, k), (C, k, j))
+                                    probs[(i, j)][rule[0]] = math.log(rule[2])
+
         return table, probs
 
 
@@ -114,7 +160,25 @@ def get_tree(chart, i,j,nt):
     Return the parse-tree rooted in non-terminal nt and covering span i,j.
     """
     # TODO: Part 4
-    return None 
+
+    if nt not in chart[(i, j)]:
+        return ()
+
+    if j == i+1:
+        return (nt, chart[(i, j)][nt])
+
+    left = chart[(i,j)][nt][0]
+    right = chart[(i,j)][nt][1]
+    tree = (nt, get_tree(chart, left[1], left[2], left[0]), get_tree(chart, right[1], right[2], right[0]))
+ 
+    return tree 
+
+def print_chart(table, n):
+
+     for i in range(0, n):
+            for j in range(i+1, n+1):
+                print(table[(i, j)], end=' ')
+            print()
  
        
 if __name__ == "__main__":
@@ -122,9 +186,13 @@ if __name__ == "__main__":
     with open('atis3.pcfg','r') as grammar_file: 
         grammar = Pcfg(grammar_file) 
         parser = CkyParser(grammar)
-        toks =['flights', 'from','miami', 'to', 'cleveland','.'] 
+        toks =  ['flights', 'from', 'pittsburgh', 'to', 'los', 'angeles', 'thursday', 'evening', '.']
+        #toks =['miami', 'flights','cleveland', 'from', 'to','.']
         #print(parser.is_in_language(toks))
-        #table,probs = parser.parse_with_backpointers(toks)
-        #assert check_table_format(chart)
-        #assert check_probs_format(probs)
+        table,probs = parser.parse_with_backpointers(toks)
+        assert check_table_format(table)
+        assert check_probs_format(probs)
+        print_chart(table, len(toks))
+        print(get_tree(table, 0, len(toks), grammar.startsymbol))
+
         
