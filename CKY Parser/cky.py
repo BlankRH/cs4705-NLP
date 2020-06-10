@@ -145,12 +145,16 @@ class CkyParser(object):
                     for B in table[(i, k)]:
                         for C in table[(k, j)]:
                             for rule in self.grammar.rhs_to_rules[(B, C)]:
+                                prob = math.log(rule[2]) + probs[(i, k)][B] + probs[(k, j)][C]
                                 if rule[0] not in table[(i, j)]:
                                     table[(i, j)][rule[0]] = ((B, i, k), (C, k, j))
-                                    probs[(i, j)][rule[0]] = math.log(rule[2])
-                                elif 2 ** probs[(i, j)][rule[0]] < rule[2]:
+                                    probs[(i, j)][rule[0]] = prob
+                                elif probs[(i, j)][rule[0]] < prob:
                                     table[(i, j)][rule[0]] = ((B, i, k), (C, k, j))
-                                    probs[(i, j)][rule[0]] = math.log(rule[2])
+                                    probs[(i, j)][rule[0]] = prob
+                                #if rule[0] == 'NP' and i == 0 and j == 6:
+                                 #   print(B, C, probs[(i, j)][rule[0]])
+                                  #  print(prob)
 
         return table, probs
 
@@ -161,8 +165,8 @@ def get_tree(chart, i,j,nt):
     """
     # TODO: Part 4
 
-    if nt not in chart[(i, j)]:
-        return ()
+    #if nt not in chart[(i, j)]:
+     #   return ()
 
     if j == i+1:
         return (nt, chart[(i, j)][nt])
@@ -186,7 +190,7 @@ if __name__ == "__main__":
     with open('atis3.pcfg','r') as grammar_file: 
         grammar = Pcfg(grammar_file) 
         parser = CkyParser(grammar)
-        toks =  ['flights', 'from', 'pittsburgh', 'to', 'los', 'angeles', 'thursday', 'evening', '.']
+        toks =  ['flights', 'between', 'tampa', 'and', 'saint', 'louis', '.']
         #toks =['miami', 'flights','cleveland', 'from', 'to','.']
         #print(parser.is_in_language(toks))
         table,probs = parser.parse_with_backpointers(toks)
