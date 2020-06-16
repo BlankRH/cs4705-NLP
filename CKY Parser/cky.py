@@ -97,13 +97,11 @@ class CkyParser(object):
         return False
         """
         # TODO, part 2
-        pi = {}
+        pi = defaultdict(list)
         n = len(tokens)
 
         #init
         for i in range(0, n):
-            for j in range(i+1, n+1):
-                pi[(i,j)] = []
             for rule in self.grammar.rhs_to_rules[(tokens[i],)]:
                 pi[(i, i+1)].append(rule[0])
 
@@ -117,7 +115,7 @@ class CkyParser(object):
                                 if rule[0] not in pi[(i, j)]:
                                     pi[(i, j)].append(rule[0])
 
-        return 'S' in pi[(0, n)] or self.grammar.startsymbol in pi[(0, n)]
+        return self.grammar.startsymbol in pi[(0, n)]
 
        
     def parse_with_backpointers(self, tokens):
@@ -125,15 +123,12 @@ class CkyParser(object):
         Parse the input tokens and return a parse table and a probability table.
         """
         # TODO, part 3
-        table= {}
-        probs = {}
+        table= defaultdict(dict)
+        probs = defaultdict(dict)
         n = len(tokens)
 
         #init
         for i in range(0, n):
-            for j in range(i+1, n+1):
-                table[(i,j)] = {}
-                probs[(i,j)] = {}
             for rule in self.grammar.rhs_to_rules[(tokens[i],)]:
                 table[(i, i+1)][rule[0]] = tokens[i]
                 probs[(i, i+1)][rule[0]] = math.log(rule[2])
@@ -165,9 +160,6 @@ def get_tree(chart, i,j,nt):
     """
     # TODO: Part 4
 
-    #if nt not in chart[(i, j)]:
-     #   return ()
-
     if j == i+1:
         return (nt, chart[(i, j)][nt])
 
@@ -190,13 +182,13 @@ if __name__ == "__main__":
     with open('atis3.pcfg','r') as grammar_file: 
         grammar = Pcfg(grammar_file) 
         parser = CkyParser(grammar)
-        toks =  ['flights', 'between', 'tampa', 'and', 'saint', 'louis', '.']
+        toks = ['flights','from','miami','to','cleveland','.']
         #toks =['miami', 'flights','cleveland', 'from', 'to','.']
         #print(parser.is_in_language(toks))
         table,probs = parser.parse_with_backpointers(toks)
         assert check_table_format(table)
         assert check_probs_format(probs)
-        print_chart(table, len(toks))
-        print(get_tree(table, 0, len(toks), grammar.startsymbol))
+        print(probs)
+        #print(get_tree(table, 0, len(toks), grammar.startsymbol))
 
         

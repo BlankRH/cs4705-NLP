@@ -53,7 +53,7 @@ class Pcfg(object):
             prob = 0.0
             for rule in self.lhs_to_rules[rules]:
                 prob = fsum([prob, rule[2]])
-                if len(rule[1]) == 2 and not rule[1][0].isupper() and rule[1][1].isupper():
+                if len(rule[1]) == 2 and not (rule[1][0].isupper() and rule[1][1].isupper()):
                     print(rule)
                     return False
                 if len(rule[1]) == 1 and rule[1][0].isupper():
@@ -62,7 +62,11 @@ class Pcfg(object):
                 if len(rule[1]) != 2 and len(rule[1]) != 1:
                     print(rule)
                     return False
-            if abs(prob - 1.0) > 1e-11:
+                if not rule[0].isupper():
+                    print(rule)
+                    return False
+
+            if abs(prob - 1.0) > 1e-10:
                 print(prob)
                 print(self.lhs_to_rules[rules])
                 return False
@@ -74,5 +78,8 @@ class Pcfg(object):
 if __name__ == "__main__":
     with open(sys.argv[1],'r') as grammar_file:
         grammar = Pcfg(grammar_file)
-    print(grammar.verify_grammar())
+    if not grammar.verify_grammar():
+        print("invalid rule")
+    else:
+        print("valid grammar")
         
